@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globe — World Atlas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080c12;
+    --ocean-deep: #0a1628;
+    --ocean-mid: #0d1f3c;
+    --land: #1e3a5f;
+    --land-hover: #3a6ea8;
+    --land-selected: #6aabf7;
+    --graticule: rgba(80,120,200,0.08);
+    --border: rgba(100,160,255,0.25);
+    --text: #c8d8f0;
+    --accent: #6aabf7;
+    --accent2: #a8d4ff;
+    --dim: #3a5070;
+    --glow: rgba(106,171,247,0.15);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    font-family: 'Space Mono', monospace;
+    color: var(--text);
+  }
+
+  /* Starfield */
+  #stars {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 40%, rgba(20,40,80,0.6) 0%, transparent 55%),
+      radial-gradient(ellipse at 75% 65%, rgba(10,25,60,0.5) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  #stars canvas { position: absolute; inset: 0; }
+
+  #app {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto 1fr;
+  }
+
+  /* Header */
+  header {
+    grid-column: 1 / -1;
+    padding: 20px 32px 16px;
+    border-bottom: 1px solid rgba(100,150,255,0.1);
+    display: flex; align-items: baseline; gap: 20px;
+    backdrop-filter: blur(4px);
+  }
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; font-weight: 300;
+    color: var(--accent2);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  header .sub {
+    font-size: 0.65rem; color: var(--dim);
+    letter-spacing: 0.2em; text-transform: uppercase;
+  }
+
+  /* Globe container */
+  #globe-wrap {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+
+  #globe-svg {
+    cursor: grab;
+    filter: drop-shadow(0 0 60px rgba(30,80,180,0.4)) drop-shadow(0 0 120px rgba(10,40,120,0.3));
+  }
+  #globe-svg:active { cursor: grabbing; }
+
+  .graticule { fill: none; stroke: var(--graticule); stroke-width: 0.5; }
+  .sphere-bg  { fill: var(--ocean-deep); }
+  .sphere-rim {
+    fill: none;
+    stroke: rgba(100,160,255,0.18);
+    stroke-width: 1.5;
+  }
+  .atmosphere {
+    fill: none;
+    stroke: rgba(80,140,255,0.12);
+    stroke-width: 10;
+  }
+
+  .country {
+    fill: var(--land);
+    stroke: var(--border);
+    stroke-width: 0.4;
+    cursor: pointer;
+    transition: fill 0.18s ease;
+  }
+  .country:hover  { fill: var(--land-hover); }
+  .country.active { fill: var(--land-selected); stroke: var(--accent); stroke-width: 0.8; }
+
+  /* Side panel */
+  #panel {
+    border-left: 1px solid rgba(100,150,255,0.1);
+    padding: 32px 24px;
+    display: flex; flex-direction: column; gap: 28px;
+    backdrop-filter: blur(8px);
+    background: rgba(8,12,18,0.6);
+    overflow-y: auto;
+  }
+
+  .panel-block { display: flex; flex-direction: column; gap: 8px; }
+  .panel-label {
+    font-size: 0.6rem; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--dim);
+  }
+
+  #country-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem; font-weight: 600;
+    color: var(--accent2);
+    line-height: 1.1;
+    min-height: 2.5rem;
+  }
+  #country-name.empty {
+    font-weight: 300; font-style: italic;
+    color: var(--dim); font-size: 1.2rem;
+  }
+
+  #country-iso {
+    font-size: 0.7rem; letter-spacing: 0.15em; color: var(--dim);
+  }
+
+  /* Coords display */
+  .coords-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .coord-box {
+    background: rgba(20,40,80,0.4);
+    border: 1px solid rgba(100,150,255,0.1);
+    border-radius: 3px; padding: 10px 12px;
+  }
+  .coord-box .c-label { font-size: 0.55rem; letter-spacing: 0.15em; color: var(--dim); margin-bottom: 4px; }
+  .coord-box .c-val  { font-size: 0.85rem; color: var(--accent); }
+
+  /* Instructions */
+  .instructions {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid rgba(100,150,255,0.08);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .inst-row {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.65rem; color: var(--dim); letter-spacing: 0.05em;
+  }
+  .inst-icon {
+    width: 22px; height: 22px; flex-shrink: 0;
+    background: rgba(100,150,255,0.08);
+    border: 1px solid rgba(100,150,255,0.15);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; color: var(--accent);
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: rgba(8,14,30,0.92);
+    border: 1px solid rgba(100,160,255,0.2);
+    border-radius: 3px; padding: 5px 11px;
+    font-size: 0.72rem; color: var(--accent2);
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.1s;
+    letter-spacing: 0.05em;
+    backdrop-filter: blur(8px);
+    z-index: 100;
+  }
+
+  #loading {
+    position: fixed; inset: 0; z-index: 200;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+  }
+  #loading h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem; font-weight: 300;
+    color: var(--accent2); letter-spacing: 0.2em;
+  }
+  #loading p { font-size: 0.65rem; color: var(--dim); letter-spacing: 0.15em; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid rgba(100,160,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="stars"><canvas id="star-canvas"></canvas></div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <h2>World Atlas</h2>
+  <p>Loading geographic data...</p>
+</div>
+
+<div id="app" style="opacity:0;transition:opacity 0.6s">
+  <header>
+    <h1>World Atlas</h1>
+    <span class="sub">High-fidelity · Interactive Globe</span>
+  </header>
+
+  <div id="globe-wrap">
+    <svg id="globe-svg"></svg>
+  </div>
+
+  <div id="panel">
+    <div class="panel-block">
+      <div class="panel-label">Selected Country</div>
+      <div id="country-name" class="empty">— click a country —</div>
+      <div id="country-iso"></div>
+    </div>
+
+    <div class="panel-block">
+      <div class="panel-label">Cursor Position</div>
+      <div class="coords-grid">
+        <div class="coord-box">
+          <div class="c-label">Longitude</div>
+          <div class="c-val" id="c-lon">—</div>
+        </div>
+        <div class="coord-box">
+          <div class="c-label">Latitude</div>
+          <div class="c-val" id="c-lat">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <div class="panel-label">Controls</div>
+      <div class="inst-row"><div class="inst-icon">⟳</div> Drag to rotate globe</div>
+      <div class="inst-row"><div class="inst-icon">⊕</div> Scroll to zoom</div>
+      <div class="inst-row"><div class="inst-icon">↖</div> Click country to select</div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<!-- D3 and TopoJSON from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+<script>
+// ── Starfield ────────────────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('star-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  function initStars() {
+    stars = Array.from({length: 280}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.2,
+      a: Math.random() * 0.7 + 0.1,
+      drift: (Math.random() - 0.5) * 0.015,
+    }));
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180,210,255,${s.a})`;
+      ctx.fill();
+      s.a += s.drift;
+      if (s.a > 0.8 || s.a < 0.05) s.drift *= -1;
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize(); initStars(); draw();
+})();
+
+// ── Globe setup ──────────────────────────────────────────────────────────────
+const tooltip = document.getElementById('tooltip');
+const countryName = document.getElementById('country-name');
+const countryIso = document.getElementById('country-iso');
+const cLon = document.getElementById('c-lon');
+const cLat = document.getElementById('c-lat');
+
+// Country ISO to name map
+const countryNames = {
+  "004":"Afghanistan","008":"Albania","012":"Algeria","024":"Angola","032":"Argentina",
+  "036":"Australia","040":"Austria","031":"Azerbaijan","050":"Bangladesh","112":"Belarus",
+  "056":"Belgium","064":"Bhutan","068":"Bolivia","070":"Bosnia and Herzegovina",
+  "072":"Botswana","076":"Brazil","096":"Brunei","100":"Bulgaria","854":"Burkina Faso",
+  "108":"Burundi","116":"Cambodia","120":"Cameroon","124":"Canada","140":"Central African Republic",
+  "144":"Sri Lanka","148":"Chad","152":"Chile","156":"China","170":"Colombia",
+  "180":"DR Congo","178":"Congo","188":"Costa Rica","191":"Croatia","192":"Cuba",
+  "196":"Cyprus","203":"Czech Republic","208":"Denmark","262":"Djibouti","214":"Dominican Republic",
+  "218":"Ecuador","818":"Egypt","222":"El Salvador","231":"Ethiopia","246":"Finland",
+  "250":"France","266":"Gabon","288":"Ghana","276":"Germany","300":"Greece",
+  "320":"Guatemala","324":"Guinea","328":"Guyana","332":"Haiti","340":"Honduras",
+  "348":"Hungary","356":"India","360":"Indonesia","364":"Iran","368":"Iraq",
+  "372":"Ireland","376":"Israel","380":"Italy","388":"Jamaica","392":"Japan",
+  "400":"Jordan","398":"Kazakhstan","404":"Kenya","410":"South Korea","408":"North Korea",
+  "414":"Kuwait","417":"Kyrgyzstan","418":"Laos","428":"Latvia","422":"Lebanon",
+  "426":"Lesotho","430":"Liberia","434":"Libya","440":"Lithuania","442":"Luxembourg",
+  "450":"Madagascar","454":"Malawi","458":"Malaysia","466":"Mali","478":"Mauritania",
+  "484":"Mexico","498":"Moldova","496":"Mongolia","504":"Morocco","508":"Mozambique",
+  "104":"Myanmar","516":"Namibia","524":"Nepal","528":"Netherlands","554":"New Zealand",
+  "558":"Nicaragua","562":"Niger","566":"Nigeria","578":"Norway","512":"Oman",
+  "586":"Pakistan","591":"Panama","598":"Papua New Guinea","600":"Paraguay","604":"Peru",
+  "608":"Philippines","616":"Poland","620":"Portugal","634":"Qatar","642":"Romania",
+  "643":"Russia","646":"Rwanda","682":"Saudi Arabia","686":"Senegal","694":"Sierra Leone",
+  "706":"Somalia","710":"South Africa","728":"South Sudan","724":"Spain","729":"Sudan",
+  "740":"Suriname","752":"Sweden","756":"Switzerland","760":"Syria","762":"Tajikistan",
+  "834":"Tanzania","764":"Thailand","768":"Togo","788":"Tunisia","792":"Turkey",
+  "795":"Turkmenistan","800":"Uganda","804":"Ukraine","784":"United Arab Emirates",
+  "826":"United Kingdom","840":"United States","858":"Uruguay","860":"Uzbekistan",
+  "862":"Venezuela","704":"Vietnam","887":"Yemen","894":"Zambia","716":"Zimbabwe",
+  "024":"Angola","788":"Tunisia","729":"Sudan","426":"Lesotho","072":"Botswana",
+  "516":"Namibia","710":"South Africa","748":"Eswatini","454":"Malawi",
+  "834":"Tanzania","508":"Mozambique","716":"Zimbabwe","894":"Zambia",
+  "180":"DR Congo","178":"Congo","266":"Gabon","120":"Cameroon","140":"Central African Republic",
+  "204":"Benin","288":"Ghana","384":"Ivory Coast","430":"Liberia","466":"Mali",
+  "478":"Mauritania","562":"Niger","566":"Nigeria","686":"Senegal","694":"Sierra Leone",
+  "768":"Togo","854":"Burkina Faso","288":"Ghana","324":"Guinea","624":"Guinea-Bissau",
+  "012":"Algeria","818":"Egypt","434":"Libya","504":"Morocco","724":"Spain",
+  "620":"Portugal","250":"France","056":"Belgium","528":"Netherlands","276":"Germany",
+  "040":"Austria","756":"Switzerland","380":"Italy","300":"Greece","792":"Turkey",
+  "196":"Cyprus","616":"Poland","203":"Czech Republic","703":"Slovakia","348":"Hungary",
+  "642":"Romania","100":"Bulgaria","804":"Ukraine","498":"Moldova","112":"Belarus",
+  "233":"Estonia","428":"Latvia","440":"Lithuania","246":"Finland","578":"Norway",
+  "752":"Sweden","208":"Denmark","372":"Ireland","826":"United Kingdom",
+  "352":"Iceland","840":"United States","124":"Canada","484":"Mexico",
+  "320":"Guatemala","340":"Honduras","222":"El Salvador","558":"Nicaragua",
+  "188":"Costa Rica","591":"Panama","192":"Cuba","332":"Haiti","214":"Dominican Republic",
+  "388":"Jamaica","170":"Colombia","862":"Venezuela","328":"Guyana","740":"Suriname",
+  "218":"Ecuador","604":"Peru","068":"Bolivia","076":"Brazil","600":"Paraguay",
+  "858":"Uruguay","032":"Argentina","152":"Chile",
+  "792":"Turkey","368":"Iraq","364":"Iran","400":"Jordan","422":"Lebanon",
+  "376":"Israel","760":"Syria","887":"Yemen","682":"Saudi Arabia","414":"Kuwait",
+  "634":"Qatar","784":"United Arab Emirates","512":"Oman","275":"Palestine",
+  "050":"Bangladesh","356":"India","524":"Nepal","064":"Bhutan","144":"Sri Lanka",
+  "586":"Pakistan","004":"Afghanistan","762":"Tajikistan","795":"Turkmenistan",
+  "860":"Uzbekistan","417":"Kyrgyzstan","398":"Kazakhstan","496":"Mongolia",
+  "156":"China","410":"South Korea","408":"North Korea","392":"Japan","116":"Cambodia",
+  "418":"Laos","764":"Thailand","704":"Vietnam","458":"Malaysia","360":"Indonesia",
+  "608":"Philippines","096":"Brunei","036":"Australia","554":"New Zealand",
+  "598":"Papua New Guinea","800":"Uganda","646":"Rwanda","108":"Burundi",
+  "404":"Kenya","706":"Somalia","231":"Ethiopia","262":"Djibouti","706":"Somalia",
+  "024":"Angola","266":"Gabon","178":"Congo","140":"Central African Republic",
+  "180":"DR Congo","894":"Zambia","716":"Zimbabwe","454":"Malawi","508":"Mozambique",
+  "834":"Tanzania","710":"South Africa","516":"Namibia","072":"Botswana",
+  "748":"Eswatini","426":"Lesotho","050":"Bangladesh",
+  "031":"Azerbaijan","268":"Georgia","051":"Armenia","792":"Turkey"
+};
+
+let selectedCountry = null;
+let width, height, radius, projection, path, svg;
+
+function getSize() {
+  const wrap = document.getElementById('globe-wrap');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  const r = Math.min(w, h) * 0.44;
+  return { w, h, r };
+}
+
+async function init() {
+  // Fetch world topology from CDN
+  let world;
+  try {
+    world = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json");
+  } catch(e) {
+    // fallback
+    document.getElementById('loading').innerHTML = `
+      <div style="text-align:center;color:#6aabf7;font-family:monospace">
+        <div style="font-size:2rem;margin-bottom:12px">⚠</div>
+        <div>Could not load map data.</div>
+        <div style="color:#3a5070;font-size:0.8rem;margin-top:8px">Check your internet connection.</div>
+      </div>`;
+    return;
+  }
+
+  const countries = topojson.feature(world, world.objects.countries);
+  const borders = topojson.mesh(world, world.objects.countries, (a,b) => a !== b);
+
+  const { w, h, r } = getSize();
+  width = w; height = h; radius = r;
+
+  // Projection
+  projection = d3.geoOrthographic()
+    .scale(radius)
+    .translate([width / 2, height / 2])
+    .clipAngle(90)
+    .precision(0.3)
+    .rotate([0, -20, 0]);
+
+  path = d3.geoPath(projection);
+
+  svg = d3.select('#globe-svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  // Atmosphere glow
+  const defs = svg.append('defs');
+  const glow = defs.append('radialGradient')
+    .attr('id', 'atmo-glow')
+    .attr('cx', '50%').attr('cy', '45%');
+  glow.append('stop').attr('offset', '60%').attr('stop-color', 'rgba(10,30,80,0)');
+  glow.append('stop').attr('offset', '100%').attr('stop-color', 'rgba(40,100,220,0.18)');
+
+  const oceanGrad = defs.append('radialGradient')
+    .attr('id', 'ocean-grad')
+    .attr('cx', '38%').attr('cy', '35%');
+  oceanGrad.append('stop').attr('offset', '0%').attr('stop-color', '#1a3a70');
+  oceanGrad.append('stop').attr('offset', '100%').attr('stop-color', '#050d1c');
+
+  // Ocean sphere
+  svg.append('circle')
+    .attr('class', 'sphere-bg')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
+    .style('fill', 'url(#ocean-grad)');
+
+  // Graticule
+  const grat = d3.geoGraticule()();
+  svg.append('path').attr('class', 'graticule').attr('d', path(grat)).attr('id', 'grat');
+
+  // Countries
+  const countryG = svg.append('g').attr('id', 'country-g');
+
+  countryG.selectAll('path.country')
+    .data(countries.features)
+    .enter().append('path')
+    .attr('class', 'country')
+    .attr('d', path)
+    .attr('id', d => 'c' + d.id)
+    .on('mouseenter', function(event, d) {
+      const name = countryNames[String(d.id).padStart(3,'0')] || `Country ${d.id}`;
+      tooltip.style.opacity = '1';
+      tooltip.textContent = name;
+    })
+    .on('mousemove', function(event) {
+      tooltip.style.left = (event.clientX + 14) + 'px';
+      tooltip.style.top  = (event.clientY - 28) + 'px';
+
+      const coords = projection.invert([event.offsetX, event.offsetY]);
+      if (coords) {
+        cLon.textContent = coords[0].toFixed(2) + '°';
+        cLat.textContent = coords[1].toFixed(2) + '°';
+      }
+    })
+    .on('mouseleave', function() {
+      tooltip.style.opacity = '0';
+    })
+    .on('click', function(event, d) {
+      event.stopPropagation();
+      const id = String(d.id).padStart(3,'0');
+      const name = countryNames[id] || `Country ${d.id}`;
+
+      if (selectedCountry) d3.select('#c' + selectedCountry).classed('active', false);
+      selectedCountry = d.id;
+      d3.select(this).classed('active', true);
+
+      countryName.textContent = name;
+      countryName.classList.remove('empty');
+      countryIso.textContent = 'ID: ' + d.id;
+
+      // hook: add your logic here
+      console.log('Selected:', { id: d.id, name });
+    });
+
+  // Country borders overlay
+  svg.append('path')
+    .attr('id', 'borders')
+    .datum(borders)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(100,160,255,0.22)')
+    .attr('stroke-width', 0.4)
+    .attr('d', path);
+
+  // Atmosphere rim
+  svg.append('circle')
+    .attr('class', 'atmosphere')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius + 5);
+  svg.append('circle')
+    .attr('class', 'sphere-rim')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius);
+  svg.append('circle')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
+    .style('fill', 'url(#atmo-glow)');
+
+  // ── Drag to rotate ──────────────────────────────────────────────────────────
+  let dragStart = null;
+  let rotStart = null;
+  let velocity = [0, 0];
+  let lastPos = null;
+  let animFrame = null;
+  let isDragging = false;
+
+  function redraw() {
+    path = d3.geoPath(projection);
+    svg.select('#grat').attr('d', path(d3.geoGraticule()()));
+    svg.selectAll('path.country').attr('d', path);
+    svg.select('#borders').attr('d', path(borders));
+  }
+
+  const drag = d3.drag()
+    .on('start', (event) => {
+      isDragging = true;
+      if (animFrame) cancelAnimationFrame(animFrame);
+      dragStart = [event.x, event.y];
+      rotStart = projection.rotate();
+      lastPos = [event.x, event.y];
+      velocity = [0, 0];
+    })
+    .on('drag', (event) => {
+      const dx = event.x - dragStart[0];
+      const dy = event.y - dragStart[1];
+      const rot = projection.rotate();
+      projection.rotate([
+        rotStart[0] + dx * 0.35,
+        rotStart[1] - dy * 0.35,
+        rot[2]
+      ]);
+      velocity = [event.x - lastPos[0], event.y - lastPos[1]];
+      lastPos = [event.x, event.y];
+      redraw();
+    })
+    .on('end', () => {
+      isDragging = false;
+      // Momentum
+      function momentum() {
+        velocity[0] *= 0.94;
+        velocity[1] *= 0.94;
+        if (Math.abs(velocity[0]) < 0.02 && Math.abs(velocity[1]) < 0.02) return;
+        const r = projection.rotate();
+        projection.rotate([r[0] + velocity[0] * 0.35, r[1] - velocity[1] * 0.35, r[2]]);
+        redraw();
+        animFrame = requestAnimationFrame(momentum);
+      }
+      animFrame = requestAnimationFrame(momentum);
+    });
+
+  svg.call(drag);
+
+  // ── Scroll to zoom ──────────────────────────────────────────────────────────
+  svg.on('wheel', (event) => {
+    event.preventDefault();
+    const s = projection.scale();
+    const newS = Math.min(Math.max(s * (event.deltaY > 0 ? 0.9 : 1.1), radius * 0.5), radius * 8);
+    projection.scale(newS);
+    redraw();
+  });
+
+  // ── Resize ──────────────────────────────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    const { w, h, r } = getSize();
+    width = w; height = h;
+    svg.attr('width', w).attr('height', h);
+    projection.translate([w/2, h/2]);
+    svg.select('.sphere-bg').attr('cx', w/2).attr('cy', h/2);
+    svg.select('.atmosphere').attr('cx', w/2).attr('cy', h/2);
+    svg.select('.sphere-rim').attr('cx', w/2).attr('cy', h/2);
+    svg.selectAll('circle[fill="url(#atmo-glow)"]').attr('cx', w/2).attr('cy', h/2);
+    redraw();
+  });
+
+  // Done — reveal UI
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.opacity = '1';
+}
+
+init();
+</script>
+</body>
+</html>
