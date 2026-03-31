@@ -55,22 +55,55 @@
   /* Header */
   header {
     grid-column: 1 / -1;
-    padding: 20px 32px 16px;
+    padding: 14px 32px;
     border-bottom: 1px solid rgba(100,150,255,0.1);
-    display: flex; align-items: baseline; gap: 20px;
+    display: flex; align-items: center; gap: 24px;
     backdrop-filter: blur(4px);
   }
   header h1 {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 300;
+    font-size: 1.8rem; font-weight: 300;
     color: var(--accent2);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    margin-right: 8px;
   }
-  header .sub {
-    font-size: 0.65rem; color: var(--dim);
-    letter-spacing: 0.2em; text-transform: uppercase;
+
+  /* Mode toggle */
+  #mode-toggle {
+    display: flex;
+    background: rgba(10,20,50,0.6);
+    border: 1px solid rgba(100,150,255,0.15);
+    border-radius: 6px;
+    padding: 3px;
+    gap: 3px;
   }
+  .mode-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 16px;
+    border: none; border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    background: transparent;
+    color: var(--dim);
+  }
+  .mode-btn .btn-icon { font-size: 1rem; line-height: 1; }
+  .mode-btn:hover { color: var(--text); background: rgba(100,150,255,0.08); }
+  .mode-btn.active {
+    background: rgba(106,171,247,0.15);
+    color: var(--accent2);
+    box-shadow: inset 0 0 0 1px rgba(106,171,247,0.25);
+  }
+
+  /* Cursor states driven by mode */
+  body.mode-rotate #globe-svg { cursor: grab; }
+  body.mode-rotate #globe-svg:active { cursor: grabbing; }
+  body.mode-select #globe-svg { cursor: crosshair; }
+  body.mode-select .country:hover { fill: var(--land-hover); }
+  body.mode-rotate .country { cursor: inherit; }
 
   /* Globe container */
   #globe-wrap {
@@ -80,10 +113,8 @@
   }
 
   #globe-svg {
-    cursor: grab;
     filter: drop-shadow(0 0 60px rgba(30,80,180,0.4)) drop-shadow(0 0 120px rgba(10,40,120,0.3));
   }
-  #globe-svg:active { cursor: grabbing; }
 
   .graticule { fill: none; stroke: var(--graticule); stroke-width: 0.5; }
   .sphere-bg  { fill: var(--ocean-deep); }
@@ -221,7 +252,14 @@
 <div id="app" style="opacity:0;transition:opacity 0.6s">
   <header>
     <h1>World Atlas</h1>
-    <span class="sub">High-fidelity · Interactive Globe</span>
+    <div id="mode-toggle">
+      <button class="mode-btn active" id="btn-rotate" onclick="setMode('rotate')">
+        <span class="btn-icon">⟳</span> Rotate
+      </button>
+      <button class="mode-btn" id="btn-select" onclick="setMode('select')">
+        <span class="btn-icon">⊕</span> Select
+      </button>
+    </div>
   </header>
 
   <div id="globe-wrap">
@@ -251,9 +289,9 @@
 
     <div class="instructions">
       <div class="panel-label">Controls</div>
-      <div class="inst-row"><div class="inst-icon">⟳</div> Drag to rotate globe</div>
-      <div class="inst-row"><div class="inst-icon">⊕</div> Scroll to zoom</div>
-      <div class="inst-row"><div class="inst-icon">↖</div> Click country to select</div>
+      <div class="inst-row"><div class="inst-icon">⟳</div> Rotate mode — drag globe</div>
+      <div class="inst-row"><div class="inst-icon">⊕</div> Select mode — click country</div>
+      <div class="inst-row"><div class="inst-icon">↕</div> Scroll to zoom (both modes)</div>
     </div>
   </div>
 </div>
@@ -436,15 +474,25 @@ async function init() {
   oceanGrad.append('stop').attr('offset', '0%').attr('stop-color', '#1a3a70');
   oceanGrad.append('stop').attr('offset', '100%').attr('stop-color', '#050d1c');
 
-  // Ocean sphere
+  // Ocean sphere — purely visual, never captures pointer events
   svg.append('circle')
     .attr('class', 'sphere-bg')
+    .attr('id', 'sphere-bg')
     .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
-    .style('fill', 'url(#ocean-grad)');
+    .style('fill', 'url(#ocean-grad)')
+    .style('pointer-events', 'none');
+
+  // Invisible drag surface — covers the globe area, sits below countries
+  const dragSurface = svg.append('circle')
+    .attr('id', 'drag-surface')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
+    .style('fill', 'transparent')
+    .style('stroke', 'none');
 
   // Graticule
   const grat = d3.geoGraticule()();
-  svg.append('path').attr('class', 'graticule').attr('d', path(grat)).attr('id', 'grat');
+  svg.append('path').attr('class', 'graticule').attr('d', path(grat)).attr('id', 'grat')
+    .style('pointer-events', 'none');
 
   // Countries
   const countryG = svg.append('g').attr('id', 'country-g');
@@ -463,7 +511,6 @@ async function init() {
     .on('mousemove', function(event) {
       tooltip.style.left = (event.clientX + 14) + 'px';
       tooltip.style.top  = (event.clientY - 28) + 'px';
-
       const coords = projection.invert([event.offsetX, event.offsetY]);
       if (coords) {
         cLon.textContent = coords[0].toFixed(2) + '°';
@@ -474,60 +521,83 @@ async function init() {
       tooltip.style.opacity = '0';
     })
     .on('click', function(event, d) {
+      if (mode !== 'select') return;
       event.stopPropagation();
       const id = String(d.id).padStart(3,'0');
       const name = countryNames[id] || `Country ${d.id}`;
-
       if (selectedCountry) d3.select('#c' + selectedCountry).classed('active', false);
       selectedCountry = d.id;
       d3.select(this).classed('active', true);
-
       countryName.textContent = name;
       countryName.classList.remove('empty');
       countryIso.textContent = 'ID: ' + d.id;
-
-      // hook: add your logic here
       console.log('Selected:', { id: d.id, name });
     });
 
-  // Country borders overlay
+  // Country borders overlay — visual only
   svg.append('path')
     .attr('id', 'borders')
     .datum(borders)
     .attr('fill', 'none')
     .attr('stroke', 'rgba(100,160,255,0.22)')
     .attr('stroke-width', 0.4)
-    .attr('d', path);
+    .attr('d', path)
+    .style('pointer-events', 'none');
 
-  // Atmosphere rim
+  // Atmosphere rim — visual only, no pointer events
   svg.append('circle')
     .attr('class', 'atmosphere')
-    .attr('cx', width/2).attr('cy', height/2).attr('r', radius + 5);
+    .attr('id', 'atmo-circle')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius + 5)
+    .style('pointer-events', 'none');
   svg.append('circle')
     .attr('class', 'sphere-rim')
-    .attr('cx', width/2).attr('cy', height/2).attr('r', radius);
-  svg.append('circle')
+    .attr('id', 'rim-circle')
     .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
-    .style('fill', 'url(#atmo-glow)');
+    .style('pointer-events', 'none');
+  svg.append('circle')
+    .attr('id', 'glow-circle')
+    .attr('cx', width/2).attr('cy', height/2).attr('r', radius)
+    .style('fill', 'url(#atmo-glow)')
+    .style('pointer-events', 'none');
 
-  // ── Drag to rotate ──────────────────────────────────────────────────────────
-  let dragStart = null;
-  let rotStart = null;
-  let velocity = [0, 0];
-  let lastPos = null;
-  let animFrame = null;
-  let isDragging = false;
+  // ── Mode switching ──────────────────────────────────────────────────────────
+  let mode = 'rotate';
+
+  window.setMode = function(m) {
+    mode = m;
+    document.body.className = 'mode-' + m;
+    document.getElementById('btn-rotate').classList.toggle('active', m === 'rotate');
+    document.getElementById('btn-select').classList.toggle('active', m === 'select');
+    // In rotate mode: drag surface is active; in select mode: pass through to countries
+    dragSurface.style('pointer-events', m === 'rotate' ? 'all' : 'none');
+  };
+
+  document.body.className = 'mode-rotate';
+
+  function updateGlobeCircles() {
+    const s = projection.scale();
+    const [cx, cy] = projection.translate();
+    svg.select('#sphere-bg').attr('cx', cx).attr('cy', cy).attr('r', s);
+    svg.select('#drag-surface').attr('cx', cx).attr('cy', cy).attr('r', s);
+    svg.select('#atmo-circle').attr('cx', cx).attr('cy', cy).attr('r', s + 5);
+    svg.select('#rim-circle').attr('cx', cx).attr('cy', cy).attr('r', s);
+    svg.select('#glow-circle').attr('cx', cx).attr('cy', cy).attr('r', s);
+  }
 
   function redraw() {
     path = d3.geoPath(projection);
     svg.select('#grat').attr('d', path(d3.geoGraticule()()));
     svg.selectAll('path.country').attr('d', path);
     svg.select('#borders').attr('d', path(borders));
+    updateGlobeCircles();
   }
+
+  // ── Rotate mode: drag on the dedicated drag surface ─────────────────────────
+  let dragStart = null, rotStart = null, velocity = [0,0], lastPos = null, animFrame = null;
 
   const drag = d3.drag()
     .on('start', (event) => {
-      isDragging = true;
       if (animFrame) cancelAnimationFrame(animFrame);
       dragStart = [event.x, event.y];
       rotStart = projection.rotate();
@@ -537,32 +607,24 @@ async function init() {
     .on('drag', (event) => {
       const dx = event.x - dragStart[0];
       const dy = event.y - dragStart[1];
-      const rot = projection.rotate();
-      projection.rotate([
-        rotStart[0] + dx * 0.35,
-        rotStart[1] - dy * 0.35,
-        rot[2]
-      ]);
+      projection.rotate([rotStart[0] + dx * 0.35, rotStart[1] - dy * 0.35, projection.rotate()[2]]);
       velocity = [event.x - lastPos[0], event.y - lastPos[1]];
       lastPos = [event.x, event.y];
       redraw();
     })
     .on('end', () => {
-      isDragging = false;
-      // Momentum
       function momentum() {
-        velocity[0] *= 0.94;
-        velocity[1] *= 0.94;
+        velocity[0] *= 0.94; velocity[1] *= 0.94;
         if (Math.abs(velocity[0]) < 0.02 && Math.abs(velocity[1]) < 0.02) return;
         const r = projection.rotate();
-        projection.rotate([r[0] + velocity[0] * 0.35, r[1] - velocity[1] * 0.35, r[2]]);
+        projection.rotate([r[0] + velocity[0]*0.35, r[1] - velocity[1]*0.35, r[2]]);
         redraw();
         animFrame = requestAnimationFrame(momentum);
       }
       animFrame = requestAnimationFrame(momentum);
     });
 
-  svg.call(drag);
+  dragSurface.call(drag);
 
   // ── Scroll to zoom ──────────────────────────────────────────────────────────
   svg.on('wheel', (event) => {
@@ -579,10 +641,7 @@ async function init() {
     width = w; height = h;
     svg.attr('width', w).attr('height', h);
     projection.translate([w/2, h/2]);
-    svg.select('.sphere-bg').attr('cx', w/2).attr('cy', h/2);
-    svg.select('.atmosphere').attr('cx', w/2).attr('cy', h/2);
-    svg.select('.sphere-rim').attr('cx', w/2).attr('cy', h/2);
-    svg.selectAll('circle[fill="url(#atmo-glow)"]').attr('cx', w/2).attr('cy', h/2);
+    updateGlobeCircles();
     redraw();
   });
 
