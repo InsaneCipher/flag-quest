@@ -232,6 +232,195 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:60
 @keyframes spin{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px}
+
+/* ══════════════════════════════════════════
+   MOBILE LAYOUT  (≤ 700px)
+══════════════════════════════════════════ */
+@media (max-width:700px){
+
+  /* Full viewport scroll on mobile */
+  html,body{overflow:auto;height:auto;min-height:100%}
+
+  /* 1-column stacked layout */
+  #app{display:flex;flex-direction:column;min-height:100vh;width:100%}
+
+  /* ── Header ── */
+  header{height:48px;padding:0 14px;gap:10px}
+  header h1{font-size:1.3rem;letter-spacing:.12em}
+  .hint-pill{display:none}
+  #global-timer-wrap{gap:6px}
+  #global-timer{font-size:1.6rem}
+  #global-timer-label{font-size:.42rem}
+
+  /* ── Right panel (flag) — moves to top below header ── */
+  #right-panel{
+    order:-1;
+    border-left:none;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    flex-direction:row;
+    align-items:stretch;
+    padding:0;
+    overflow:visible;
+  }
+
+  /* Flag card takes left half */
+  #flag-card{
+    flex:1;
+    padding:12px 14px;
+    gap:6px;
+    border-bottom:none;
+    border-right:1px solid rgba(255,255,255,.06);
+  }
+  #flag-emoji{font-size:4.5rem}
+  #flag-country-name{font-size:1.1rem;min-height:1.4rem}
+  #flag-country-name.placeholder{font-size:.9rem}
+  #flag-hint{font-size:.46rem}
+  #flag-continent{font-size:.65rem}
+
+  /* Turn bar — full width strip */
+  #right-turn-bar-wrap{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:4px;
+    width:100%;
+  }
+
+  /* Pips + timer stack on right side */
+  #pips-section{
+    flex-shrink:0;
+    width:120px;
+    border-bottom:none;
+    border-left:none;
+    padding:10px 12px;
+    justify-content:center;
+  }
+  #guess-pips{flex-wrap:wrap;gap:6px;justify-content:center}
+  .gpip{font-size:1rem}
+
+  /* Hide coords on mobile */
+  .coords-row{display:none}
+
+  /* Turn bar position fix for mobile */
+  #right-panel{position:relative}
+
+  /* ── Globe ── */
+  #globe-wrap{
+    order:0;
+    width:100%;
+    aspect-ratio:1/1;
+    flex-shrink:0;
+  }
+
+  /* ── Left panel — becomes a compact stats bar ── */
+  #left-panel{
+    order:1;
+    flex-direction:row;
+    flex-wrap:wrap;
+    padding:10px 12px;
+    gap:8px;
+    border-right:none;
+    border-top:1px solid rgba(255,255,255,.06);
+    overflow:visible;
+  }
+
+  /* Lives + score side by side compact */
+  #lives-block{flex-shrink:0}
+  #hearts{gap:3px;font-size:1rem}
+  .plabel{font-size:.42rem;margin-bottom:1px}
+
+  #score-block{
+    flex-shrink:0;
+    padding-bottom:0;
+    border-bottom:none;
+    border-right:1px solid rgba(255,255,255,.06);
+    padding-right:10px;
+  }
+  #score{font-size:2.2rem}
+
+  /* Round info inline */
+  #guess-info{
+    font-size:.52rem;
+    align-self:center;
+    flex-shrink:0;
+  }
+
+  /* Last result — full width */
+  #last-result{
+    width:100%;
+    font-size:.58rem;
+    padding:6px 9px;
+    min-height:1.6rem;
+  }
+
+  /* Wrong guesses this turn — compact */
+  #turn-guesses-wrap{
+    width:100%;
+    padding-bottom:6px;
+    border-bottom:1px solid rgba(255,255,255,.05);
+  }
+  #turn-guess-list{min-height:16px}
+  .tg-chip{font-size:.5rem;padding:2px 6px}
+
+  /* History — compact scrollable row */
+  #history-wrap{
+    width:100%;
+    flex:unset;
+    min-height:0;
+    max-height:120px;
+  }
+  #history-list{gap:2px}
+  .hist-name{font-size:.5rem}
+  .hist-pts{font-size:.48rem}
+
+  /* Hi score inline at bottom */
+  #hi-wrap{
+    padding-top:6px;
+    border-top:1px solid rgba(255,255,255,.05);
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  #hi-val{font-size:1.3rem}
+
+  /* ── Overlay / start screen ── */
+  #overlay-screen{
+    position:fixed;
+    padding:20px 16px;
+    justify-content:flex-start;
+    padding-top:60px;
+    overflow-y:auto;
+  }
+  #ov-title{font-size:3rem;letter-spacing:.18em;margin-bottom:2px}
+  .ov-tagline{font-size:.5rem;margin-bottom:20px}
+
+  /* Rule cards 2×2 on mobile */
+  .ov-rules{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    max-width:100%;
+    margin-bottom:20px;
+  }
+  .ov-rule-card{padding:12px 10px;gap:5px}
+  .ov-rule-icon{font-size:1.3rem}
+  .ov-rule-val{font-size:1.3rem}
+  .ov-rule-desc{font-size:.44rem}
+
+  /* Hints stack vertically on mobile */
+  .ov-hint-strip{
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .ov-hint-text{font-size:.5rem}
+
+  .big-btn{padding:13px 40px;font-size:1.1rem}
+
+  /* Gameover score */
+  #gameover-score{font-size:4.5rem}
+  #ov-history{max-height:180px}
+  .ov-hist-name{font-size:.56rem}
+}
 </style>
 </head>
 <body>
