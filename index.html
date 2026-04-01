@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flag Quest — World Atlas Quiz</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono:wght@400;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#000;--land:#1e3a5f;
-  --border:rgba(100,160,255,.22);--text:#c8d8f0;--accent:#6aabf7;--accent2:#a8d4ff;
-  --dim:#3a5070;--panel:rgba(8,12,18,.92);--card:rgba(14,22,45,.75);--cb:rgba(100,150,255,.12)
+  --border:rgba(100,160,255,.22);--text:#ffffff;--accent:#6aabf7;--accent2:#ffffff;
+  --dim:#8899aa;--panel:rgba(4,6,12,.96);--card:rgba(14,22,45,.75);--cb:rgba(100,150,255,.12);
+  --gold:#f0c040
 }
 html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;
   font-family:'Space Mono',monospace;color:var(--text);user-select:none}
@@ -19,162 +20,184 @@ html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;
 
 /* ── LAYOUT ── */
 #app{position:relative;z-index:1;width:100%;height:100%;display:grid;
-  grid-template-columns:250px 1fr 260px;grid-template-rows:auto 1fr}
+  grid-template-columns:230px 1fr 280px;grid-template-rows:auto 1fr}
 
 /* ── HEADER ── */
-header{grid-column:1/-1;padding:10px 24px;border-bottom:1px solid rgba(100,150,255,.12);
-  display:flex;align-items:center;gap:16px;backdrop-filter:blur(6px);background:rgba(8,12,22,.5)}
-header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;
-  color:var(--accent2);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
-.hint-pill{font-size:.55rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;
-  background:rgba(100,150,255,.06);border:1px solid rgba(100,150,255,.1);
-  border-radius:20px;padding:4px 12px;white-space:nowrap}
+header{grid-column:1/-1;padding:0 28px;height:56px;border-bottom:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;gap:20px;background:rgba(2,4,10,.98);
+  box-shadow:0 1px 0 rgba(255,255,255,.04)}
+header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:600;
+  color:#fff;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;
+  text-shadow:0 0 30px rgba(255,255,255,.2)}
+.hint-pill{font-size:.52rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:4px 13px;white-space:nowrap}
 
-/* Global timer */
+/* Global timer — header, top right */
 #global-timer-wrap{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
-#global-timer-label{font-size:.55rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
-#global-timer{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;
-  color:var(--accent2);letter-spacing:.05em;min-width:58px;text-align:right;transition:color .3s}
-#global-timer.warn{color:#c8843a}
-#global-timer.danger{color:#c83a3a;animation:pulse .6s ease-in-out infinite alternate}
-@keyframes pulse{from{opacity:1}to{opacity:.5}}
+#global-timer-label{font-size:.5rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);
+  display:flex;align-items:center;align-self:stretch}
+#global-timer{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;font-weight:400;
+  color:#fff;letter-spacing:.08em;transition:color .3s;line-height:1;display:block}
+#global-timer.warn{color:#f0a040}
+#global-timer.danger{color:#f04040;animation:pulse .6s ease-in-out infinite alternate}
+@keyframes pulse{from{opacity:1}to{opacity:.55}}
 
 /* ── LEFT PANEL ── */
-#left-panel{border-right:1px solid rgba(100,150,255,.1);background:var(--panel);
-  backdrop-filter:blur(8px);display:flex;flex-direction:column;padding:18px 16px;gap:18px;overflow:hidden}
-.plabel{font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:3px}
+#left-panel{border-right:1px solid rgba(255,255,255,.06);background:var(--panel);
+  display:flex;flex-direction:column;padding:16px 14px;gap:12px;overflow:hidden}
+.plabel{font-size:.47rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
 
-/* Lives */
-#hearts{display:flex;gap:5px;font-size:1.35rem}
+/* Lives stacked above score */
+#lives-block{flex-shrink:0}
+#hearts{display:flex;gap:5px;font-size:1.3rem}
 .heart{transition:all .4s;display:inline-block}
-.heart.lost{filter:grayscale(1);opacity:.25;transform:scale(.85)}
+.heart.lost{filter:grayscale(1);opacity:.2;transform:scale(.8)}
 
-/* Score */
+#score-block{flex-shrink:0;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}
 #score-box{position:relative}
-#score{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:600;
-  color:var(--accent2);line-height:1}
-.score-delta{position:absolute;top:-4px;left:0;font-size:.9rem;color:#4eb87a;font-weight:700;
+#score{font-family:'Bebas Neue',sans-serif;font-size:3.6rem;font-weight:400;
+  color:#fff;line-height:1}
+.score-delta{position:absolute;top:-6px;left:0;font-size:1rem;color:#4eb87a;font-weight:700;
   animation:floatUp .9s ease-out forwards;pointer-events:none;white-space:nowrap}
-@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-32px)}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}
 
-/* Last result */
-#last-result{font-size:.68rem;letter-spacing:.03em;padding:9px 11px;border-radius:5px;
-  border:1px solid transparent;min-height:2.2rem;transition:all .3s;line-height:1.5}
-#last-result.correct{background:rgba(30,110,60,.18);border-color:rgba(78,184,122,.25);color:#4eb87a}
-#last-result.wrong{background:rgba(110,50,30,.18);border-color:rgba(184,120,78,.25);color:#c89060}
-#last-result.timeout{background:rgba(100,80,20,.18);border-color:rgba(180,140,50,.25);color:#c8a050}
+/* Round + last result */
+#guess-info{font-size:.6rem;color:var(--dim);letter-spacing:.08em;flex-shrink:0}
+#last-result{font-size:.64rem;letter-spacing:.03em;padding:8px 10px;border-radius:6px;
+  border:1px solid transparent;min-height:2rem;transition:all .3s;line-height:1.5;flex-shrink:0;color:#fff}
+#last-result.correct{background:rgba(30,110,60,.2);border-color:rgba(78,184,122,.3);color:#6edd98}
+#last-result.wrong{background:rgba(110,50,30,.2);border-color:rgba(184,120,78,.3);color:#e8a878}
+#last-result.timeout{background:rgba(100,80,20,.2);border-color:rgba(180,140,50,.3);color:#e8c060}
 
-/* Guess counter */
-#guess-info{font-size:.62rem;color:var(--dim)}
-
-/* Hi score */
-#hi-wrap{padding-top:12px;border-top:1px solid rgba(100,150,255,.08);flex-shrink:0}
-#hi-val{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--dim)}
-
-/* Turn guesses */
-#turn-guesses-wrap{flex-shrink:0;padding-bottom:10px;border-bottom:1px solid rgba(100,150,255,.08)}
-#turn-guess-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;min-height:24px}
-.tg-chip{display:flex;align-items:center;gap:4px;padding:3px 7px;border-radius:3px;
-  background:rgba(122,32,32,.2);border:1px solid rgba(184,78,78,.2);font-size:.58rem;color:#c87878}
-.tg-chip .tg-flag{font-size:.85rem;line-height:1}
+/* Turn wrong guesses */
+#turn-guesses-wrap{flex-shrink:0;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+#turn-guess-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;min-height:22px}
+.tg-chip{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;
+  background:rgba(160,40,40,.2);border:1px solid rgba(220,80,80,.25);font-size:.56rem;color:#f08888;
+  animation:slideIn .2s ease-out}
+.tg-chip .tg-flag{font-size:.82rem;line-height:1}
 
 /* History */
 #history-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
-#history-list{overflow-y:auto;display:flex;flex-direction:column;gap:4px;flex:1;padding-right:2px}
-.hist-item{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:4px;
+#history-list{overflow-y:auto;display:flex;flex-direction:column;gap:3px;flex:1;padding-right:2px}
+.hist-item{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:5px;
   border:1px solid transparent;flex-shrink:0;animation:slideIn .25s ease-out}
-@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-.hist-item.hi-correct{background:rgba(26,122,58,.15);border-color:rgba(78,184,122,.2)}
-.hist-item.hi-timeout{background:rgba(100,60,10,.15);border-color:rgba(180,130,50,.2)}
-.hist-flag{font-size:1.1rem;flex-shrink:0;line-height:1}
-.hist-name{font-size:.6rem;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hist-pts{font-size:.58rem;font-weight:700;white-space:nowrap}
-.hi-correct .hist-pts{color:#4eb87a}
-.hi-timeout .hist-pts{color:#c8a050}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.hist-item.hi-correct{background:rgba(26,122,58,.14);border-color:rgba(78,184,122,.2)}
+.hist-item.hi-timeout{background:rgba(100,60,10,.14);border-color:rgba(180,130,50,.2)}
+.hist-flag{font-size:1rem;flex-shrink:0;line-height:1}
+.hist-name{font-size:.57rem;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist-pts{font-size:.55rem;font-weight:700;white-space:nowrap}
+.hi-correct .hist-pts{color:#6edd98}
+.hi-timeout .hist-pts{color:#e8c060}
+
+/* Hi score — gold to stand out */
+#hi-wrap{padding-top:10px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+#hi-val{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;font-weight:400;color:var(--gold);
+  letter-spacing:.08em;text-shadow:0 0 16px rgba(240,192,64,.3)}
 
 /* ── GLOBE ── */
-#globe-wrap{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
-  cursor:grab}
+#globe-wrap{position:relative;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;cursor:grab;background:radial-gradient(ellipse at 50% 50%,rgba(20,40,100,.12) 0%,transparent 70%)}
 #globe-wrap:active{cursor:grabbing}
-#globe-svg{pointer-events:none} /* all events handled by the overlay canvas */
+#globe-svg{pointer-events:none;filter:drop-shadow(0 0 60px rgba(30,80,180,.45)) drop-shadow(0 0 120px rgba(10,40,120,.3))}
 .graticule{fill:none;stroke:rgba(80,120,200,.07);stroke-width:.5}
-.sphere-rim{fill:none;stroke:rgba(100,160,255,.18);stroke-width:1.5}
-.atmosphere{fill:none;stroke:rgba(80,140,255,.1);stroke-width:10}
+.sphere-rim{fill:none;stroke:rgba(100,160,255,.2);stroke-width:1.5}
+.atmosphere{fill:none;stroke:rgba(80,140,255,.12);stroke-width:12}
 .country{stroke:var(--border);stroke-width:.4;transition:fill .18s}
 
-/* Turn bar */
-#turn-bar-wrap{position:absolute;bottom:0;left:0;right:0;height:6px;background:rgba(5,10,30,.6)}
-#turn-bar{height:100%;width:100%;transition:width .22s linear,background .4s}
-#turn-bar.ok{background:var(--accent)}
-#turn-bar.half{background:#c8843a}
-#turn-bar.low{background:#c83a3a}
-
-/* Flash overlay */
-#quiz-flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s;border-radius:0}
+/* Globe bottom bar (hidden) */
+#turn-bar-wrap{position:absolute;bottom:0;left:0;right:0;height:5px;background:rgba(5,10,30,.8)}
+#turn-bar{height:100%;width:100%;transition:width .22s linear,background .4s,box-shadow .4s}
+#turn-bar.ok{background:var(--accent);box-shadow:0 0 8px rgba(106,171,247,.6)}
+#turn-bar.half{background:#f0a040;box-shadow:0 0 8px rgba(240,160,64,.6)}
+#turn-bar.low{background:#f04040;box-shadow:0 0 8px rgba(240,64,64,.6)}
+#quiz-flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .35s}
 
 /* ── RIGHT PANEL ── */
-#right-panel{border-left:1px solid rgba(100,150,255,.1);background:var(--panel);
-  backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;
-  justify-content:center;padding:24px 18px;gap:18px}
+#right-panel{border-left:1px solid rgba(255,255,255,.06);background:var(--panel);
+  display:flex;flex-direction:column;align-items:stretch;padding:0;overflow:hidden}
 
-#flag-display{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
-#flag-emoji{font-size:5.5rem;line-height:1;filter:drop-shadow(0 4px 20px rgba(0,0,0,.6));
-  transition:transform .2s;cursor:default}
-#flag-country-name{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:600;
-  color:var(--accent2);text-align:center;min-height:1.8rem;opacity:0;transition:opacity .6s;letter-spacing:.03em}
+/* Turn timer — TOP of right panel, above flag */
+#right-turn-bar-wrap{height:6px;background:rgba(5,10,30,.9);flex-shrink:0}
+#right-turn-bar{height:100%;width:100%;transition:width .22s linear,background .4s,box-shadow .4s}
+#right-turn-bar.ok{background:var(--accent);box-shadow:0 0 8px rgba(106,171,247,.7)}
+#right-turn-bar.half{background:#f0a040;box-shadow:0 0 8px rgba(240,160,64,.7)}
+#right-turn-bar.low{background:#f04040;box-shadow:0 0 8px rgba(240,64,64,.7)}
+
+/* Flag card — hero */
+#flag-card{display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:20px 16px 16px;background:rgba(10,18,40,.5);
+  border-bottom:1px solid rgba(255,255,255,.06)}
+#flag-card .plabel{align-self:flex-start}
+/* Large flag filling the card */
+#flag-emoji{font-size:8rem;line-height:1;
+  filter:drop-shadow(0 8px 28px rgba(0,0,0,.8)) drop-shadow(0 0 40px rgba(106,171,247,.08));
+  cursor:default}
+#flag-country-name{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;
+  color:#fff;text-align:center;min-height:2rem;transition:opacity .6s;letter-spacing:.03em;width:100%}
+#flag-country-name.placeholder{opacity:.25;letter-spacing:.3em;font-size:1.2rem;font-style:normal}
 #flag-country-name.revealed{opacity:1}
-#flag-hint{font-size:.57rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-align:center}
+#flag-continent{font-size:.78rem;color:var(--accent);letter-spacing:.12em;min-height:1rem;
+  text-align:center;transition:opacity .5s;opacity:0;text-transform:uppercase}
+#flag-hint{font-size:.54rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-align:center}
 
-.panel-divider{width:100%;height:1px;background:rgba(100,150,255,.1)}
+/* Guess pips */
+#pips-section{display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+#guess-pips{display:flex;gap:10px}
+.gpip{font-size:1.2rem;transition:all .25s;color:var(--dim)}
+.gpip.used-wrong{color:#f04040;text-shadow:0 0 8px rgba(240,64,64,.5)}
+.gpip.used-correct{color:#4eb87a;text-shadow:0 0 8px rgba(78,184,122,.5)}
 
-.coords-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:100%}
-.coord-box{background:var(--card);border:1px solid var(--cb);border-radius:4px;padding:7px 10px}
-.c-label{font-size:.49rem;letter-spacing:.1em;color:var(--dim);margin-bottom:2px}
-.c-val{font-size:.76rem;color:var(--accent)}
+/* Coords */
+.coords-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:12px 16px;margin-top:auto}
+.coord-box{background:rgba(10,18,40,.5);border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:6px 9px}
+.c-label{font-size:.46rem;letter-spacing:.1em;color:var(--dim);margin-bottom:1px}
+.c-val{font-size:.72rem;color:#fff}
 
 /* ── OVERLAY SCREEN ── */
-#overlay-screen{position:absolute;inset:0;z-index:300;background:rgba(6,10,18,.93);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-  backdrop-filter:blur(14px)}
-#overlay-screen h2{font-family:'Cormorant Garamond',serif;font-size:3.2rem;font-weight:300;
-  color:var(--accent2);letter-spacing:.15em;text-align:center}
-.overlay-sub{font-size:.68rem;color:var(--dim);letter-spacing:.1em;text-align:center;
-  max-width:340px;line-height:2;text-transform:uppercase}
-#gameover-score{font-family:'Cormorant Garamond',serif;font-size:4.5rem;font-weight:600;
-  color:var(--accent2);display:none}
-#gameover-hi{font-size:.65rem;color:var(--dim);letter-spacing:.1em;display:none}
-.big-btn{padding:13px 38px;background:rgba(106,171,247,.1);border:1px solid rgba(106,171,247,.28);
-  border-radius:6px;font-family:'Space Mono',monospace;font-size:.75rem;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--accent2);cursor:pointer;transition:all .2s}
-.big-btn:hover{background:rgba(106,171,247,.2);border-color:rgba(106,171,247,.5);
-  box-shadow:0 0 24px rgba(106,171,247,.12)}
+#overlay-screen{position:absolute;inset:0;z-index:300;background:rgba(2,4,10,.95);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  backdrop-filter:blur(16px)}
+#overlay-screen h2{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:600;
+  color:#fff;letter-spacing:.2em;text-align:center;text-shadow:0 0 40px rgba(255,255,255,.15)}
+.overlay-sub{font-size:.64rem;color:var(--dim);letter-spacing:.1em;text-align:center;
+  max-width:360px;line-height:2.2;text-transform:uppercase}
+#gameover-score{font-family:'Bebas Neue',sans-serif;font-size:5rem;font-weight:400;
+  color:#fff;display:none;letter-spacing:.08em}
+#gameover-hi{font-size:.62rem;color:var(--gold);letter-spacing:.12em;display:none;margin-top:-10px}
+.big-btn{padding:13px 42px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;font-family:'Space Mono',monospace;font-size:.75rem;letter-spacing:.14em;
+  text-transform:uppercase;color:#fff;cursor:pointer;transition:all .2s}
+.big-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);
+  box-shadow:0 0 28px rgba(255,255,255,.08)}
+
+/* End screen history */
+#ov-history{display:none;flex-direction:column;gap:5px;width:100%;max-width:500px;
+  max-height:240px;overflow-y:auto;padding:0 4px}
+.ov-hist-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:5px;
+  border:1px solid transparent}
+.ov-hist-item.hi-correct{background:rgba(26,122,58,.12);border-color:rgba(78,184,122,.2)}
+.ov-hist-item.hi-timeout{background:rgba(100,60,10,.12);border-color:rgba(180,130,50,.2)}
+.ov-hist-flag{font-size:1.15rem;line-height:1;flex-shrink:0}
+.ov-hist-name{font-size:.63rem;color:#fff;flex:1}
+.ov-hist-pts{font-size:.6rem;font-weight:700;white-space:nowrap}
+.ov-hist-guesses{display:flex;gap:3px;flex-shrink:0}
+.ov-hist-guesses span{font-size:.65rem}
 
 /* ── LOADING ── */
 #loading{position:fixed;inset:0;z-index:400;background:var(--bg);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:18px}
-#loading h2{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:300;
-  color:var(--accent2);letter-spacing:.18em}
-#loading p{font-size:.62rem;color:var(--dim);letter-spacing:.12em}
-.spinner{width:34px;height:34px;border:2px solid rgba(100,160,255,.15);
-  border-top-color:var(--accent);border-radius:50%;animation:spin .85s linear infinite}
+  align-items:center;justify-content:center;gap:20px}
+#loading h2{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:300;
+  color:#fff;letter-spacing:.2em}
+#loading p{font-size:.6rem;color:var(--dim);letter-spacing:.14em}
+.spinner{width:34px;height:34px;border:2px solid rgba(255,255,255,.1);
+  border-top-color:#fff;border-radius:50%;animation:spin .85s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* End screen history */
-#ov-history{display:none;flex-direction:column;gap:6px;width:100%;max-width:480px;
-  max-height:260px;overflow-y:auto;padding:0 4px}
-.ov-hist-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:4px;
-  border:1px solid transparent}
-.ov-hist-item.hi-correct{background:rgba(26,122,58,.12);border-color:rgba(78,184,122,.18)}
-.ov-hist-item.hi-timeout{background:rgba(100,60,10,.12);border-color:rgba(180,130,50,.18)}
-.ov-hist-flag{font-size:1.2rem;line-height:1;flex-shrink:0}
-.ov-hist-name{font-size:.65rem;color:var(--text);flex:1}
-.ov-hist-pts{font-size:.62rem;font-weight:700;white-space:nowrap}
-.ov-hist-guesses{display:flex;gap:3px;flex-shrink:0}
-.ov-hist-guesses span{font-size:.65rem}
 ::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-thumb{background:rgba(106,171,247,.2);border-radius:2px}
-.gpip{font-size:1.1rem;transition:all .2s;color:var(--dim)}
-.gpip.used-wrong{color:#c83a3a}
-.gpip.used-correct{color:#4eb87a}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px}
 </style>
 </head>
 <body>
@@ -198,7 +221,9 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:30
 
   <!-- LEFT -->
   <div id="left-panel">
-    <div style="flex-shrink:0">
+
+    <!-- Lives stacked above score -->
+    <div id="lives-block">
       <div class="plabel">Lives</div>
       <div id="hearts">
         <span class="heart" id="h0">❤️</span>
@@ -209,16 +234,16 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:30
       </div>
     </div>
 
-    <div style="flex-shrink:0">
+    <div id="score-block">
       <div class="plabel">Score</div>
       <div id="score-box"><div id="score">0</div></div>
     </div>
 
-    <div id="guess-info" class="plabel" style="flex-shrink:0">Round 1</div>
+    <div id="guess-info" class="plabel">Round 1</div>
 
     <div id="last-result" style="flex-shrink:0"></div>
 
-    <div id="turn-guesses-wrap" style="flex-shrink:0;padding-bottom:10px;border-bottom:1px solid rgba(100,150,255,.08)">
+    <div id="turn-guesses-wrap" style="flex-shrink:0;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)">
       <div class="plabel">Wrong Guesses This Turn</div>
       <div id="turn-guess-list"></div>
     </div>
@@ -237,26 +262,30 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:30
   <!-- GLOBE -->
   <div id="globe-wrap">
     <svg id="globe-svg"></svg>
-    <!-- Transparent hit canvas sits on top to capture all pointer events -->
     <canvas id="hit-canvas" style="position:absolute;inset:0;opacity:0"></canvas>
-    <div id="turn-bar-wrap"><div id="turn-bar" class="ok"></div></div>
+    <div id="turn-bar-wrap" style="display:none"><div id="turn-bar" class="ok"></div></div>
     <div id="quiz-flash"></div>
   </div>
 
   <!-- RIGHT -->
   <div id="right-panel">
-    <div id="flag-display">
+
+    <!-- Flag card hero -->
+    <div id="flag-card">
       <div class="plabel">Find this country</div>
       <div id="flag-emoji">🌍</div>
-      <div id="flag-country-name"></div>
-      <div id="flag-continent" style="font-size:.72rem;color:var(--accent);letter-spacing:.08em;min-height:1rem;text-align:center;transition:opacity .5s;opacity:0"></div>
-      <div id="flag-hint" style="font-size:.57rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-align:center"></div>
+      <div id="flag-country-name" class="placeholder">???</div>
+      <div id="flag-continent"></div>
+      <div id="flag-hint">Guess 2: name · Guess 4: continent</div>
     </div>
-    <div class="panel-divider"></div>
+
+    <!-- Turn timer bar between flag and pips -->
+    <div id="right-turn-bar-wrap"><div id="right-turn-bar" class="ok"></div></div>
+
     <!-- Guess pips -->
-    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;width:100%">
-      <div class="plabel">Guesses</div>
-      <div id="guess-pips" style="display:flex;gap:7px">
+    <div id="pips-section">
+      <div class="plabel">Guesses Remaining</div>
+      <div id="guess-pips">
         <span class="gpip" id="gp0">○</span>
         <span class="gpip" id="gp1">○</span>
         <span class="gpip" id="gp2">○</span>
@@ -264,7 +293,8 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:30
         <span class="gpip" id="gp4">○</span>
       </div>
     </div>
-    <div class="panel-divider"></div>
+
+    <!-- Coords at bottom -->
     <div class="coords-row">
       <div class="coord-box"><div class="c-label">Longitude</div><div class="c-val" id="c-lon">—</div></div>
       <div class="coord-box"><div class="c-label">Latitude</div><div class="c-val" id="c-lat">—</div></div>
@@ -287,9 +317,9 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:30
   </div>
 </div>
 
-<div id="tooltip" style="position:fixed;background:rgba(8,14,30,.92);border:1px solid rgba(100,160,255,.2);
-  border-radius:3px;padding:4px 10px;font-size:.7rem;color:var(--accent2);pointer-events:none;
-  opacity:0;transition:opacity .1s;letter-spacing:.04em;backdrop-filter:blur(8px);z-index:100"></div>
+<div id="tooltip" style="position:fixed;background:rgba(4,8,20,.94);border:1px solid rgba(100,160,255,.18);
+  border-radius:4px;padding:4px 11px;font-size:.68rem;color:var(--accent2);pointer-events:none;
+  opacity:0;transition:opacity .1s;letter-spacing:.04em;backdrop-filter:blur(10px);z-index:100"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
@@ -485,12 +515,14 @@ function startTurnTimer(){
 }
 
 function updateBar(){
-  const bar=document.getElementById('turn-bar');
   const pct=Math.max(0,100-(turnSecs/turnMax)*100);
-  bar.style.width=pct+'%';
-  if(pct>55)bar.className='ok';
-  else if(pct>22)bar.className='half';
-  else bar.className='low';
+  const cls=pct>55?'ok':pct>22?'half':'low';
+  // right panel bar (main visible one)
+  const rb=document.getElementById('right-turn-bar');
+  rb.style.width=pct+'%'; rb.className=cls;
+  // globe bottom bar (hidden but keep in sync)
+  const tb=document.getElementById('turn-bar');
+  tb.style.width=pct+'%'; tb.className=cls;
 }
 
 function nextQuestion(){
@@ -514,8 +546,8 @@ function nextQuestion(){
 
   const id=nid(quizTarget.id),a2=A2[id];
   document.getElementById('flag-emoji').textContent=flag(a2);
-  document.getElementById('flag-country-name').textContent='';
-  document.getElementById('flag-country-name').classList.remove('revealed');
+  document.getElementById('flag-country-name').textContent='???';
+  document.getElementById('flag-country-name').className='placeholder';
   document.getElementById('flag-continent').textContent='';
   document.getElementById('flag-continent').style.opacity='0';
   document.getElementById('flag-hint').textContent='Guess 2: name · Guess 4: continent';
@@ -569,8 +601,9 @@ function handleCountryClick(feature){
     // After 1st wrong guess: reveal name
     if(guessCount>=1&&!nameRevealed){
       nameRevealed=true;
-      document.getElementById('flag-country-name').textContent=NAMES[nid(quizTarget.id)]||'';
-      document.getElementById('flag-country-name').classList.add('revealed');
+      const el=document.getElementById('flag-country-name');
+      el.textContent=NAMES[nid(quizTarget.id)]||'';
+      el.className='revealed';
     }
     // After 3rd wrong guess: reveal continent
     if(guessCount>=3&&!continentRevealed){
