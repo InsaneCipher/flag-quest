@@ -158,25 +158,59 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:60
 .c-val{font-size:.72rem;color:#fff}
 
 /* ── OVERLAY SCREEN ── */
-#overlay-screen{position:absolute;inset:0;z-index:300;background:rgba(2,4,10,.95);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
-  backdrop-filter:blur(16px)}
-#overlay-screen h2{font-family:'Cormorant Garamond',serif;font-size:3.5rem;font-weight:600;
-  color:#fff;letter-spacing:.2em;text-align:center;text-shadow:0 0 40px rgba(255,255,255,.15)}
-.overlay-sub{font-size:.64rem;color:var(--dim);letter-spacing:.1em;text-align:center;
-  max-width:360px;line-height:2.2;text-transform:uppercase}
-#gameover-score{font-family:'Bebas Neue',sans-serif;font-size:5rem;font-weight:400;
-  color:#fff;display:none;letter-spacing:.08em}
-#gameover-hi{font-size:.62rem;color:var(--gold);letter-spacing:.12em;display:none;margin-top:-10px}
-.big-btn{padding:13px 42px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);
-  border-radius:6px;font-family:'Space Mono',monospace;font-size:.75rem;letter-spacing:.14em;
-  text-transform:uppercase;color:#fff;cursor:pointer;transition:all .2s}
-.big-btn:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.4);
-  box-shadow:0 0 28px rgba(255,255,255,.08)}
+#overlay-screen{position:absolute;inset:0;z-index:300;background:rgba(2,4,10,.96);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:0;backdrop-filter:blur(18px);overflow-y:auto;padding:24px}
+
+/* Shared title */
+#ov-title{font-family:'Cormorant Garamond',serif;font-size:4.5rem;font-weight:600;
+  color:#fff;letter-spacing:.25em;text-align:center;text-transform:uppercase;
+  text-shadow:0 0 60px rgba(255,255,255,.12);margin-bottom:4px}
+.ov-tagline{font-size:.58rem;color:var(--dim);letter-spacing:.3em;text-transform:uppercase;
+  text-align:center;margin-bottom:32px}
+
+/* Rule cards grid */
+.ov-rules{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  width:100%;max-width:680px;margin-bottom:32px}
+.ov-rule-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  border-radius:8px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;
+  gap:7px;text-align:center}
+.ov-rule-icon{font-size:1.6rem;line-height:1}
+.ov-rule-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;
+  letter-spacing:.08em;line-height:1}
+.ov-rule-desc{font-size:.5rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;line-height:1.5}
+
+/* Hint strip */
+.ov-hint-strip{display:flex;gap:24px;margin-bottom:36px;align-items:flex-start;
+  max-width:560px;width:100%}
+.ov-hint{display:flex;align-items:flex-start;gap:10px;flex:1}
+.ov-hint-num{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:rgba(255,255,255,.4);
+  line-height:1;flex-shrink:0}
+.ov-hint-text{font-size:.52rem;color:var(--dim);letter-spacing:.08em;line-height:1.8;
+  text-transform:uppercase}
+.ov-hint-text strong{color:rgba(255,255,255,.6);font-weight:700}
+
+/* Start button */
+.big-btn{padding:15px 56px;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.25);border-radius:6px;
+  font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.2em;
+  text-transform:uppercase;color:#fff;cursor:pointer;transition:all .22s;
+  box-shadow:0 0 0 0 rgba(255,255,255,0)}
+.big-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.5);
+  box-shadow:0 0 32px rgba(255,255,255,.08);transform:translateY(-1px)}
+.big-btn:active{transform:translateY(0)}
+
+/* Gameover extras */
+#gameover-score{font-family:'Bebas Neue',sans-serif;font-size:6rem;font-weight:400;
+  color:#fff;display:none;letter-spacing:.08em;line-height:1;margin-top:8px}
+#gameover-hi{font-size:.62rem;color:var(--gold);letter-spacing:.16em;display:none;
+  margin-bottom:20px;text-transform:uppercase}
+.overlay-sub{font-size:.62rem;color:var(--dim);letter-spacing:.16em;text-align:center;
+  text-transform:uppercase;margin-bottom:20px}
 
 /* End screen history */
 #ov-history{display:none;flex-direction:column;gap:5px;width:100%;max-width:500px;
-  max-height:240px;overflow-y:auto;padding:0 4px}
+  max-height:200px;overflow-y:auto;padding:0 4px;margin-bottom:24px}
 .ov-hist-item{display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:5px;
   border:1px solid transparent}
 .ov-hist-item.hi-correct{background:rgba(26,122,58,.12);border-color:rgba(78,184,122,.2)}
@@ -303,16 +337,59 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:60
 
   <!-- START / GAME OVER -->
   <div id="overlay-screen" style="grid-column:1/-1;grid-row:2">
+
+    <!-- Title -->
     <h2 id="ov-title">Flag Quest</h2>
-    <div class="overlay-sub" id="ov-sub">
-      Drag the globe to spin it · Click a country to guess<br>
-      5 lives · 5 minutes · 5 guesses per round<br>
-      After 1 wrong guess the name is revealed · After 3 the continent too<br>
-      First-try fast answers score huge — score is exponential!
-    </div>
+    <div class="ov-tagline" id="ov-tagline">How well do you know your flags?</div>
+
+    <!-- Gameover score (hidden on start) -->
     <div id="gameover-score"></div>
     <div id="gameover-hi"></div>
+    <div class="overlay-sub" id="ov-sub" style="display:none"></div>
+
+    <!-- End screen history (hidden on start) -->
     <div id="ov-history"></div>
+
+    <!-- Rule cards (start screen only) -->
+    <div class="ov-rules" id="ov-rules">
+      <div class="ov-rule-card">
+        <div class="ov-rule-icon">❤️</div>
+        <div class="ov-rule-val">5</div>
+        <div class="ov-rule-desc">Lives</div>
+      </div>
+      <div class="ov-rule-card">
+        <div class="ov-rule-icon">⏱</div>
+        <div class="ov-rule-val">5:00</div>
+        <div class="ov-rule-desc">Game Timer</div>
+      </div>
+      <div class="ov-rule-card">
+        <div class="ov-rule-icon">🔍</div>
+        <div class="ov-rule-val">5</div>
+        <div class="ov-rule-desc">Guesses Per Round</div>
+      </div>
+      <div class="ov-rule-card">
+        <div class="ov-rule-icon">⚡</div>
+        <div class="ov-rule-val">×10</div>
+        <div class="ov-rule-desc">Exponential Scoring</div>
+      </div>
+    </div>
+
+    <!-- Hint strip -->
+    <div class="ov-hint-strip" id="ov-hints">
+      <div class="ov-hint">
+        <div class="ov-hint-num">1</div>
+        <div class="ov-hint-text">After your <strong>1st wrong guess</strong> the country name is revealed</div>
+      </div>
+      <div class="ov-hint">
+        <div class="ov-hint-num">2</div>
+        <div class="ov-hint-text">After your <strong>3rd wrong guess</strong> the continent is revealed</div>
+      </div>
+      <div class="ov-hint">
+        <div class="ov-hint-num">3</div>
+        <div class="ov-hint-text"><strong>Faster correct answers</strong> score exponentially more points</div>
+      </div>
+    </div>
+
     <button class="big-btn" id="start-btn" onclick="startGame()">▶ Start Game</button>
   </div>
 </div>
@@ -474,6 +551,12 @@ function startGame(){
   document.getElementById('ov-history').style.display='none';
   document.getElementById('gameover-score').style.display='none';
   document.getElementById('gameover-hi').style.display='none';
+  // Restore start-screen elements for next play
+  document.getElementById('ov-title').textContent='Flag Quest';
+  document.getElementById('ov-tagline').textContent='How well do you know your flags?';
+  document.getElementById('ov-rules').style.display='grid';
+  document.getElementById('ov-hints').style.display='flex';
+  document.getElementById('start-btn').textContent='▶ Start Game';
   updateHearts();updateScore();
   document.getElementById('global-timer').textContent=fmtTime(globalSecs);
   document.getElementById('global-timer').className='';
@@ -642,9 +725,11 @@ function endGame(reason){
   restoreAllCountryColors();
   if(score>hiScore){hiScore=score;localStorage.setItem('fq-hi',hiScore);}
   document.getElementById('ov-title').textContent='Game Over';
-  document.getElementById('ov-sub').textContent=
-    reason==='timeout'?'THE 5-MINUTE TIMER RAN OUT':
-    reason==='lives'?'YOU RAN OUT OF LIVES':'GAME OVER';
+  document.getElementById('ov-tagline').textContent=
+    reason==='timeout'?'The 5-minute timer ran out' :
+    reason==='lives'?'You ran out of lives' : 'Game over';
+  document.getElementById('ov-rules').style.display='none';
+  document.getElementById('ov-hints').style.display='none';
   document.getElementById('gameover-score').style.display='block';
   document.getElementById('gameover-score').textContent=score;
   document.getElementById('gameover-hi').style.display='block';
