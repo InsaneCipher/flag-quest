@@ -718,11 +718,16 @@ const cLon=document.getElementById('c-lon'),cLat=document.getElementById('c-lat'
 // HELPERS
 // ════════════════════════════════════════════
 function flag(a2){if(!a2)return'🏳️';return[...a2.toUpperCase()].map(c=>String.fromCodePoint(0x1F1E6-65+c.charCodeAt(0))).join('');}
-// Returns an <img> tag using flagcdn — works on all browsers including Chrome/Windows
+// Flag images via jsDelivr (serves npm packages, extremely reliable, GitHub Pages compatible)
+// Package: https://github.com/lipis/flag-icons
 function flagImg(a2,size=32){
   if(!a2)return'<span style="font-size:1.5rem">🏳️</span>';
   const code=a2.toLowerCase();
-  return`<img src="https://flagcdn.com/w${size}/${code}.png" alt="${a2}" class="flag-img" style="height:${size}px;width:auto;border-radius:2px;display:inline-block;vertical-align:middle">`;
+  const emojiText=[...a2.toUpperCase()].map(c=>String.fromCodePoint(0x1F1E6-65+c.charCodeAt(0))).join('');
+  return`<img src="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${code}.svg" `+
+    `onerror="this.style.display='none';this.nextElementSibling.style.display='inline'" `+
+    `alt="${a2}" class="flag-img" style="height:${size}px;width:auto;border-radius:2px;display:inline-block;vertical-align:middle">`+
+    `<span style="display:none;font-size:${Math.round(size*.7)}px;line-height:1">${emojiText}</span>`;
 }
 function fmtTime(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
 
@@ -826,8 +831,15 @@ function nextQuestion(){
 
   const id=nid(quizTarget.id),a2=A2[id];
   const flagEl=document.getElementById('flag-emoji');
-  flagEl.src=`https://flagcdn.com/w160/${a2.toLowerCase()}.png`;
+  flagEl.dataset.tried='';
+  flagEl.src=`https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/flags/4x3/${a2.toLowerCase()}.svg`;
   flagEl.alt=a2;
+  flagEl.onerror=function(){
+    if(this.dataset.tried===''){
+      this.dataset.tried='1';
+      this.src=`https://flagcdn.com/w160/${a2.toLowerCase()}.png`;
+    }
+  };
   document.getElementById('flag-country-name').textContent='???';
   document.getElementById('flag-country-name').className='placeholder';
   document.getElementById('flag-continent').textContent='';
