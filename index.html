@@ -131,10 +131,10 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:60
   padding:20px 16px 16px;background:rgba(10,18,40,.5);
   border-bottom:1px solid rgba(255,255,255,.06)}
 #flag-card .plabel{align-self:flex-start}
-/* Large flag filling the card */
-#flag-emoji{font-size:8rem;line-height:1;
-  filter:drop-shadow(0 8px 28px rgba(0,0,0,.8)) drop-shadow(0 0 40px rgba(106,171,247,.08));
-  cursor:default}
+/* Large flag image filling the card */
+#flag-emoji{max-height:7rem;max-width:100%;border-radius:3px;
+  filter:drop-shadow(0 8px 28px rgba(0,0,0,.8));display:block;cursor:default}
+.flag-img{border-radius:2px;display:inline-block;vertical-align:middle}
 #flag-country-name{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:600;
   color:#fff;text-align:center;min-height:2rem;transition:opacity .6s;letter-spacing:.03em;width:100%}
 #flag-country-name.placeholder{opacity:.25;letter-spacing:.3em;font-size:1.2rem;font-style:normal}
@@ -496,7 +496,10 @@ header h1{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:60
     <!-- Flag card hero -->
     <div id="flag-card">
       <div class="plabel">Find this country</div>
-      <div id="flag-emoji">🌍</div>
+      <div id="flag-emoji-wrap" style="display:flex;align-items:center;justify-content:center;min-height:7rem">
+        <img id="flag-emoji" src="" alt="" style="max-height:7rem;max-width:100%;border-radius:3px;
+          filter:drop-shadow(0 8px 28px rgba(0,0,0,.8));display:block">
+      </div>
       <div id="flag-country-name" class="placeholder">???</div>
       <div id="flag-continent"></div>
       <div id="flag-hint">Guess 2: name · Guess 4: continent</div>
@@ -715,7 +718,12 @@ const cLon=document.getElementById('c-lon'),cLat=document.getElementById('c-lat'
 // HELPERS
 // ════════════════════════════════════════════
 function flag(a2){if(!a2)return'🏳️';return[...a2.toUpperCase()].map(c=>String.fromCodePoint(0x1F1E6-65+c.charCodeAt(0))).join('');}
-function nid(id){return String(id).padStart(3,'0');}
+// Returns an <img> tag using flagcdn — works on all browsers including Chrome/Windows
+function flagImg(a2,size=32){
+  if(!a2)return'<span style="font-size:1.5rem">🏳️</span>';
+  const code=a2.toLowerCase();
+  return`<img src="https://flagcdn.com/w${size}/${code}.png" alt="${a2}" class="flag-img" style="height:${size}px;width:auto;border-radius:2px;display:inline-block;vertical-align:middle">`;
+}
 function fmtTime(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
 
 // Exponential scoring:
@@ -817,7 +825,9 @@ function nextQuestion(){
   document.getElementById('guess-info').textContent='Round '+round;
 
   const id=nid(quizTarget.id),a2=A2[id];
-  document.getElementById('flag-emoji').textContent=flag(a2);
+  const flagEl=document.getElementById('flag-emoji');
+  flagEl.src=`https://flagcdn.com/w160/${a2.toLowerCase()}.png`;
+  flagEl.alt=a2;
   document.getElementById('flag-country-name').textContent='???';
   document.getElementById('flag-country-name').className='placeholder';
   document.getElementById('flag-continent').textContent='';
@@ -854,11 +864,11 @@ function handleCountryClick(feature){
     wrongGuesses.add(id);
     guessCount++;
     const wrongA2=A2[nid(id)], wrongName=NAMES[nid(id)]||'?';
-    turnGuesses.push({flag:flag(wrongA2), name:wrongName});
+    turnGuesses.push({flagHtml:flagImg(wrongA2,20), name:wrongName});
     // Render chip in turn guess list
     const chip=document.createElement('div');
     chip.className='tg-chip';
-    chip.innerHTML=`<span class="tg-flag">${flag(wrongA2)}</span><span>${wrongName}</span>`;
+    chip.innerHTML=`<span class="tg-flag">${flagImg(wrongA2,20)}</span><span>${wrongName}</span>`;
     document.getElementById('turn-guess-list').appendChild(chip);
     markPip(guessCount-1,'wrong');
     paintCountry(id,'#7a2020');
@@ -969,25 +979,24 @@ function addToHistory(type, pts){
   // Sidebar history item
   const item=document.createElement('div');
   item.className='hist-item hi-'+type;
-  // Wrong guess mini-flags
-  const wrongFlagsHtml=snapGuesses.map(g=>`<span title="${g.name}" style="font-size:.75rem">${g.flag}</span>`).join('');
-  item.innerHTML=`<span class="hist-flag">${flag(a2)}</span>`+
+  const wrongFlagsHtml=snapGuesses.map(g=>`<span title="${g.name}">${g.flagHtml}</span>`).join('');
+  item.innerHTML=`<span class="hist-flag">${flagImg(a2,24)}</span>`+
     `<span class="hist-name">${name}</span>`+
-    (snapGuesses.length?`<span style="display:flex;gap:2px;flex-shrink:0">${wrongFlagsHtml}</span>`:'  ')+
+    (snapGuesses.length?`<span style="display:flex;gap:2px;flex-shrink:0;align-items:center">${wrongFlagsHtml}</span>`:'  ')+
     `<span class="hist-pts">${type==='correct'?'+'+pts+'pts':'miss'}</span>`;
   const list=document.getElementById('history-list');
   list.insertBefore(item, list.firstChild);
 
-  // End screen history item (mirror structure)
+  // End screen history item
   const ovItem=document.createElement('div');
   ovItem.className='ov-hist-item hi-'+type;
-  const ovWrongHtml=snapGuesses.map(g=>`<span title="${g.name}">${g.flag}</span>`).join('');
-  ovItem.innerHTML=`<span class="ov-hist-flag">${flag(a2)}</span>`+
+  const ovWrongHtml=snapGuesses.map(g=>`<span title="${g.name}">${g.flagHtml}</span>`).join('');
+  ovItem.innerHTML=`<span class="ov-hist-flag">${flagImg(a2,28)}</span>`+
     `<span class="ov-hist-name">${name}</span>`+
     `<span class="ov-hist-guesses">${ovWrongHtml}</span>`+
     `<span class="ov-hist-pts">${type==='correct'?'+'+pts+' pts':'miss'}</span>`;
   const ovList=document.getElementById('ov-history');
-  ovList.appendChild(ovItem); // chronological order on end screen
+  ovList.appendChild(ovItem);
 }
 
 // ════════════════════════════════════════════
