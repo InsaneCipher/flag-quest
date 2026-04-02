@@ -714,11 +714,12 @@ const cLon=document.getElementById('c-lon'),cLat=document.getElementById('c-lat'
 // ════════════════════════════════════════════
 // HELPERS
 // ════════════════════════════════════════════
+function nid(id){return String(id).padStart(3,'0');}
 
-// Flag images loaded from local flags/ folder (flagpedia w2560 PNGs, lowercase filename)
+// Flag images loaded from local w2560/ folder (flagpedia PNGs, lowercase filename)
 function flagImg(a2, size=32){
   if(!a2) return `<span style="color:#aaa;font-size:.75rem">${a2||''}</span>`;
-  return `<img src="flags/${a2.toLowerCase()}.png" alt="${a2}" style="height:${size}px;width:auto;vertical-align:middle;border-radius:2px;display:inline-block" onerror="this.style.display='none'">`;
+  return `<img src="w2560/${a2.toLowerCase()}.png" alt="${a2}" style="height:${size}px;width:auto;vertical-align:middle;border-radius:2px;display:inline-block" onerror="this.style.display='none'">`;
 }
 
 function setMainFlag(a2){
@@ -726,7 +727,7 @@ function setMainFlag(a2){
   wrap.innerHTML='';
   if(!a2) return;
   const img=document.createElement('img');
-  img.src=`flags/${a2.toLowerCase()}.png`;
+  img.src=`w2560/${a2.toLowerCase()}.png`;
   img.alt=a2;
   img.style.cssText='height:110px;width:auto;max-width:240px;border-radius:3px;filter:drop-shadow(0 4px 16px rgba(0,0,0,.6));display:block';
   img.onerror=function(){
